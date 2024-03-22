@@ -9,8 +9,15 @@ import (
 )
 
 func GetAll(c *gin.Context) {
+	var users []models.User
+
+	// confics.DB.Order("id DESC").Find(&users)
+
+	//SQL
+	confics.DB.Raw("SELECT * FROM users ORDER BY id DESC").Scan(&users)
+
 	c.JSON(200, gin.H{
-		"data": "Users",
+		"data": users,
 	})
 }
 
@@ -25,6 +32,13 @@ func Register(c *gin.Context) {
 		Fullname: input.Fullname,
 		Email:    input.Email,
 		Password: input.Password,
+	}
+
+	//เช็คอีเมลซ้ำ
+	userExist := confics.DB.Where("email = ?", input.Email).First(&user)
+	if userExist.RowsAffected == 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "มีผู้ใช้งานอีเมลนี้ในระบบแล้ว"})
+		return
 	}
 
 	result := confics.DB.Debug().Create(&user)
@@ -47,8 +61,17 @@ func Login(c *gin.Context) {
 
 func GetById(c *gin.Context) {
 	id := c.Param("id")
+
+	var user models.User
+	result := confics.DB.First(&user, id)
+
+	if result.RowsAffected < 1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบข้อมูลนี้"})
+		return
+	}
+
 	c.JSON(200, gin.H{
-		"data": id,
+		"data": user,
 	})
 }
 
