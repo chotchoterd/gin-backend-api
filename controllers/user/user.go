@@ -3,6 +3,7 @@ package usercontroller
 import (
 	"gin-backend-api/confics"
 	"gin-backend-api/models"
+	"gin-backend-api/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -77,7 +78,15 @@ func GetById(c *gin.Context) {
 
 func SearchByFullname(c *gin.Context) {
 	fullname := c.Query("fullname")
+
+	var users []models.User
+	result := confics.DB.Where("fullname LIKE ?", "%"+fullname+"%").Scopes(utils.Paginate(c)).Find(&users)
+	if result.RowsAffected < 1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบข้อมูลนี้"})
+		return
+	}
+
 	c.JSON(200, gin.H{
-		"data": fullname,
+		"data": users,
 	})
 }
